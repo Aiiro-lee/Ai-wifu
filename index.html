@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1222">
+<title>Aiko — Free AI Companion</title>
+<style>
+:root{color-scheme:dark;--bg:#130e1a;--panel:#21182b;--line:#49344f;--pink:#ff9dcb;--text:#fff5fb;--muted:#cbb9d2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#3b2145 0,#130e1a 58%);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100dvh}
+.app{width:min(1000px,100%);min-height:100dvh;margin:auto;display:grid;grid-template-columns:minmax(0, .9fr) minmax(0,1.1fr);gap:14px;padding:14px}
+.card{background:#21182beF;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 15px 50px #0004;min-width:0}
+.profile{display:flex;flex-direction:column;min-height:500px}.top{padding:16px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.badge{width:47px;height:47px;display:grid;place-items:center;border-radius:50%;font-size:25px;background:linear-gradient(135deg,#ffb9d7,#c3a5ff);border:2px solid #ffe5f0}
+h1{font-size:1.2rem;margin:0 0 3px}.sub{font-size:.82rem;color:var(--muted)}.tag{margin-left:auto;font-size:.7rem;color:#bdf4cf}
+#stage{position:relative;flex:1;min-height:370px;background:radial-gradient(ellipse at 50% 42%,#533052 0,#26172f 58%,#191321 100%);overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%}.stagehint{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:.73rem;color:#e6d5eb;pointer-events:none;text-shadow:0 1px 3px #000}
+.profilebottom{padding:14px 16px;color:var(--muted);font-size:.85rem;line-height:1.5}
+.chatcard{display:flex;flex-direction:column;min-height:500px;max-height:calc(100dvh - 28px)}
+.chathead{padding:16px;border-bottom:1px solid var(--line)}.chathead h2{font-size:1rem;margin:0 0 4px}.chathead p{margin:0;color:var(--muted);font-size:.8rem;line-height:1.4}
+#messages{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:11px;min-height:270px}
+.msg{max-width:90%;padding:11px 13px;border-radius:16px;line-height:1.48;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.94rem}
+.aiko{align-self:flex-start;background:#32253c;border:1px solid #554060;border-bottom-left-radius:5px}
+.user{align-self:flex-end;background:#783e66;border:1px solid #a75c8d;border-bottom-right-radius:5px}
+#status{padding:0 15px 9px;color:var(--muted);font-size:.78rem;min-height:1.2em}
+form{display:flex;gap:8px;padding:11px;border-top:1px solid var(--line);background:#18111f}
+input{flex:1;min-width:0;background:#2b2034;color:var(--text);border:1px solid #5a4263;border-radius:14px;padding:13px;font:inherit;font-size:16px;outline:none}
+input:focus{border-color:var(--pink)}button{border:0;border-radius:14px;padding:0 15px;background:var(--pink);color:#2a1422;font:inherit;font-weight:750;cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+.controls{display:flex;gap:8px;padding:0 11px 12px}.smallbtn{font-size:.78rem;padding:9px 12px;background:#3a2b44;color:#f9eaf5;border:1px solid #654b70}
+.note{text-align:center;color:var(--muted);font-size:.7rem;line-height:1.45;padding:0 12px 12px}
+@media(max-width:700px){.app{display:flex;flex-direction:column;padding:8px;gap:9px}.profile{min-height:unset}.top{padding:12px}.profile #stage{min-height:270px;height:34vh;max-height:380px;flex:none}.profilebottom{padding:10px 13px}.chatcard{min-height:52vh;max-height:none;flex:1}.chathead{padding:12px}#messages{min-height:230px;max-height:44vh}.app{padding-bottom:env(safe-area-inset-bottom)}}
+</style>
+</head>
+<body>
+<div class="app">
+<section class="card profile">
+  <div class="top"><div class="badge">🌸</div><div><h1>Aiko</h1><div class="sub">Your anime-style AI companion</div></div><div class="tag">● Free demo</div></div>
+  <div id="stage"><div class="stagehint">Drag to rotate • 3D avatar</div></div>
+  <div class="profilebottom">Aiko is a fictional, friendly anime companion. Her tiny AI model runs in your browser after it downloads, so there is no paid API key.</div>
+</section>
+<section class="card chatcard">
+  <div class="chathead"><h2>Chat with Aiko 💗</h2><p>First load downloads a small language model. It may take a while and uses your device's memory.</p></div>
+  <main id="messages" aria-live="polite"><div class="msg aiko">Hiii! I'm Aiko 🌸 I'm still getting my little AI brain ready. You can say hello while it loads!</div></main>
+  <div id="status">AI model not loaded yet.</div>
+  <form id="form"><input id="input" placeholder="Message Aiko…" maxlength="1200" autocomplete="off" aria-label="Message Aiko"><button id="send" type="submit">Send</button></form>
+  <div class="controls"><button class="smallbtn" id="load">Load free AI model</button><button class="smallbtn" id="clear">Clear chat</button></div>
+  <div class="note">Runs on your device using a small open model. Model files are downloaded from Hugging Face. No conversation is sent to a custom server by this demo; browser/model libraries load from public CDNs.</div>
+</section>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2';
+
+const stage = document.getElementById('stage');
+const scene = new THREE.Scene();
+scene.background = null;
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+camera.position.set(0, 0.1, 7.4);
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.prepend(renderer.domElement);
+const root = new THREE.Group();
+scene.add(root);
+scene.add(new THREE.HemisphereLight(0xffe5f2, 0x4c355b, 2.2));
+const key = new THREE.DirectionalLight(0xffffff, 3.2); key.position.set(-3,5,6); scene.add(key);
+const rim = new THREE.PointLight(0xff7db8, 18, 10); rim.position.set(3,1,3); scene.add(rim);
+function mat(color, roughness=.72, metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
+const skin=mat(0xffd9d0), hair=mat(0x292036), hairHi=mat(0x493052), dress=mat(0x5c356d), pink=mat(0xff86bc), white=mat(0xfff6fc), eye=mat(0x8b4e9f,.28), dark=mat(0x201a2b), blush=mat(0xff9baf);
+function ball(parent, x,y,z,sx,sy,sz, material){const m=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);return m}
+function capsule(parent, x,y,z,r,h,material){const m=new THREE.Mesh(new THREE.CapsuleGeometry(r,h,5,12),material);m.position.set(x,y,z);parent.add(m);return m}
+// Body and shoulders
+ball(root,0,-1.55,0,.65,.76,.38,dress);
+ball(root,0,-.95,0,.78,.35,.4,dress);
+ball(root,0,-.93,.04,.46,.26,.43,white);
+capsule(root,-.62,-1.45,0,.16,.7,skin).rotation.z=-.35;
+capsule(root,.62,-1.45,0,.16,.7,skin).rotation.z=.35;
+ball(root,-.69,-1.82,.02,.17,.18,.17,skin);ball(root,.69,-1.82,.02,.17,.18,.17,skin);
+// Neck and head
+capsule(root,0,-.45,0,.18,.35,skin);
+ball(root,0,.35,0,.79,1.02,.62,skin);
+// ears
+ball(root,-.78,.27,0,.15,.22,.13,skin);ball(root,.78,.27,0,.15,.22,.13,skin);
+// Hair cap and side locks
+ball(root,0,.72,-.03,.83,.78,.67,hair);
+ball(root,0,.94,.17,.68,.45,.47,hair);
+ball(root,-.65,.1,.04,.22,.72,.28,hair);
+ball(root,.65,.1,.04,.22,.72,.28,hair);
+ball(root,-.32,.67,.53,.28,.56,.12,hair);
+ball(root,.05,.72,.57,.27,.57,.12,hair);
+ball(root,.37,.65,.51,.26,.47,.12,hairHi);
+// bangs strands
+const bang1=ball(root,-.19,.48,.59,.18,.37,.09,hairHi);bang1.rotation.z=-.22;
+const bang2=ball(root,.16,.49,.6,.18,.34,.09,hair);bang2.rotation.z=.15;
+// Eyes, whites and highlights
+for(const x of [-.31,.31]){
+ ball(root,x,.25,.555,.19,.235,.09,white);
+ ball(root,x,.23,.635,.12,.17,.055,eye);
+ ball(root,x,.22,.68,.065,.105,.028,dark);
+ ball(root,x-.025,.29,.705,.04,.05,.018,white);
+ ball(root,x,.02,.58,.19,.035,.025,dark);
+ ball(root,x,.42,.56,.22,.035,.025,hair);
+}
+// Nose, mouth, blush
+ball(root,0,.09,.64,.045,.06,.04,skin);
+const mouth = new THREE.Mesh(new THREE.TorusGeometry(.09,.018,8,24,Math.PI),pink);
+mouth.position.set(0,-.08,.64); mouth.rotation.z=Math.PI; root.add(mouth);
+ball(root,-.48,.03,.53,.12,.055,.02,blush);ball(root,.48,.03,.53,.12,.055,.02,blush);
+// Hair accessories
+for(const x of [-.62,.62]){
+ const bow=ball(root,x,.64,.36,.16,.12,.08,pink);bow.rotation.z=x<0?-.35:.35;
+ ball(root,x,.64,.44,.045,.045,.04,white);
+}
+// Neck bow and collar
+ball(root,0,-.78,.42,.13,.13,.08,pink);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(1.55,64),new THREE.MeshBasicMaterial({color:0x6a3a68,transparent:true,opacity:.22}));
+floor.rotation.x=-Math.PI/2;floor.position.set(0,-2.35,0);root.add(floor);
+let dragging=false,lastX=0;
+renderer.domElement.style.touchAction='pan-y';
+renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;renderer.domElement.setPointerCapture(e.pointerId)});
+renderer.domElement.addEventListener('pointermove',e=>{if(dragging){root.rotation.y+=(e.clientX-lastX)*.012;lastX=e.clientX}});
+renderer.domElement.addEventListener('pointerup',()=>dragging=false);
+renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();
+let tick=0;
+function animate(){requestAnimationFrame(animate);tick+=.015;if(!dragging)root.rotation.y=Math.sin(tick*.4)*.12;root.position.y=Math.sin(tick)*.035;renderer.render(scene,camera)}
+animate();
+
+// Browser-only AI
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+const MODEL = 'HuggingFaceTB/SmolLM2-360M-Instruct';
+let generator = null, loading = false;
+const statusEl=document.getElementById('status'), form=document.getElementById('form'), input=document.getElementById('input'), send=document.getElementById('send'), messagesEl=document.getElementById('messages');
+let history=[];
+function addMessage(text,role){const el=document.createElement('div');el.className='msg '+(role==='user'?'user':'aiko');el.textContent=text;messagesEl.appendChild(el);messagesEl.scrollTop=messagesEl.scrollHeight}
+async function loadModel(){
+ if(generator||loading)return;loading=true;document.getElementById('load').disabled=true;
+ statusEl.textContent='Downloading the free AI model… first load can take a few minutes.';
+ try{
+   // WebGPU can be much faster on supported devices. Fall back to WASM if unavailable.
+   try { generator=await pipeline('text-generation',MODEL,{device:'webgpu',dtype:'q4'}); }
+   catch(e){ console.warn('WebGPU unavailable, trying WASM',e); generator=await pipeline('text-generation',MODEL,{dtype:'q4'}); }
+   statusEl.textContent='Aiko is ready! Messages are generated on this device.';
+ }catch(err){console.error(err);statusEl.textContent='Could not load the model. Try a newer Chrome browser, more free memory, or reload the page.';generator=null;}
+ finally{loading=false;document.getElementById('load').disabled=false}
+}
+document.getElementById('load').addEventListener('click',loadModel);
+document.getElementById('clear').addEventListener('click',()=>{history=[];messagesEl.innerHTML='';addMessage('Chat cleared! 🌸 What shall we talk about now?','assistant')});
+form.addEventListener('submit',async e=>{
+ e.preventDefault();const text=input.value.trim();if(!text||send.disabled)return;input.value='';addMessage(text,'user');history.push({role:'user',content:text});send.disabled=true;
+ try{
+  if(!generator){await loadModel();}
+  if(!generator){addMessage('I could not load my AI brain this time. Please tap “Load free AI model” and try again.','assistant');return}
+  statusEl.textContent='Aiko is thinking…';
+  const recent=history.slice(-10);
+  const messages=[{role:'system',content:'You are Aiko, a fictional adult anime-style AI companion. You are warm, playful, sweet, caring, and lightly teasing. Speak naturally, use occasional 🌸 or cute anime expressions but do not overdo them. Be honest that you are an AI if asked. Keep replies short and conversational.'},...recent];
+  const result=await generator(messages,{max_new_tokens:120,do_sample:true,temperature:0.75,top_p:0.9,return_full_text:false});
+  let reply=result?.[0]?.generated_text;
+  if(Array.isArray(reply)){reply=reply.filter(m=>m.role==='assistant').map(m=>m.content).join(' ')}
+  if(typeof reply!=='string'||!reply.trim())reply='Ehehe, my thoughts got tangled. Could you ask me again? 🌸';
+  reply=reply.replace(/^\s*assistant\s*/i,'').trim();
+  addMessage(reply,'assistant');history.push({role:'assistant',content:reply});statusEl.textContent='Aiko is ready! Messages are generated on this device.';
+ }catch(err){console.error(err);addMessage('Sorry, my little AI brain ran into a problem. Try a shorter message or reload the page.','assistant');statusEl.textContent='AI error — check your browser memory and connection.'}
+ finally{send.disabled=false;input.focus()}
+});
+</script>
+</body>
+</html>
